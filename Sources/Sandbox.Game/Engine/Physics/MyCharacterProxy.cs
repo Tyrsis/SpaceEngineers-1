@@ -514,7 +514,7 @@ namespace Sandbox.Engine.Physics
                 CharacterRigidBody.StepSimulation(stepSizeInSeconds);
                 CharacterRigidBody.Elevate = Elevate;
                 Supported = CharacterRigidBody.Supported;
-                SupportNormal = CharacterRigidBody.SupportNormal;
+                //SupportNormal = CharacterRigidBody.SupportNormal;
                 GroundVelocity = CharacterRigidBody.GroundVelocity;
             }           
         }
