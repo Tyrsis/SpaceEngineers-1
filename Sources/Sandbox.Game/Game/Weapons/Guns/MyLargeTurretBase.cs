@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
 using VRage.Components;
 using VRage.Game.Entity.UseObject;
 using VRage.Import;
@@ -97,6 +98,9 @@ namespace Sandbox.Game.Weapons
                         //else {unknown missile, keep shotSpeed without correction}
                     }
                 }
+
+                if (target.Physics == null && target.GetTopMostParent() == null || target.GetTopMostParent().Physics == null)
+                    return target.GetPosition();
 
                 Vector3 targetVelocity = target.Physics != null ? target.Physics.LinearVelocity : target.GetTopMostParent().Physics.LinearVelocity;
 
@@ -1763,6 +1767,17 @@ namespace Sandbox.Game.Weapons
             {
                 return true;
             }
+            
+            if (hitEntity is MyCubeGrid || hitEntity.Parent is MyCubeGrid)
+            {                
+                MyCubeGrid parent = hitEntity is MyCubeGrid ? (MyCubeGrid)hitEntity : (MyCubeGrid)hitEntity.Parent;
+                if (parent.BigOwners.Count < 1 || parent.SmallOwners.Count < 1)
+                    return true;
+
+                foreach (var item in parent.BigOwners)
+                    if (GetUserRelationToOwner(item) == MyRelationsBetweenPlayerAndBlock.Enemies)
+                        return true;
+            }
 
             return false;
         }
@@ -1777,12 +1792,46 @@ namespace Sandbox.Game.Weapons
 
             BoundingSphereD bs = new BoundingSphereD(PositionComp.GetPosition(), range);
             m_targetList.Clear();
-            MyGamePruningStructure.GetAllTargetsInSphere(ref bs, m_targetList);
+            //MyGamePruningStructure.GetAllTargetsInSphere(ref bs, m_targetList);
+            MyGamePruningStructure.GetAllTopMostEntitiesInSphere(ref bs, m_targetList);
 
             MyEntity nearestTarget = null;
             double minDistanceSq = double.MaxValue;
-            bool isDecoy = false;
 
+            foreach (var target in m_targetList)
+            {
+                if (target.Physics == null)
+                    continue;
+
+                var dist = Vector3D.DistanceSquared(target.PositionComp.GetPosition(), PositionComp.GetPosition());
+                if (IsTargetEnemy(target) && IsTargetInView(target) && IsTargetVisible(target) && target != this.GetTopMostParent())
+                {
+                    if (dist < minDistanceSq)
+                    {
+                        if (target is MyCubeGrid)
+                        {
+                            var blocks = ((MyCubeGrid)target).GetBlocks().Where(x => x.FatBlock != null).Select(y => y.FatBlock);
+                            if (blocks.Count() < 1)
+                                continue;
+
+                            var position = VRage.Library.Utils.MyRandom.Instance.Next(blocks.Count());
+                            nearestTarget = (MyEntity)blocks.ElementAt(position);
+                        }
+                        else
+                        {
+                            nearestTarget = target;
+                        }
+
+                        minDistanceSq = dist;
+                    }
+                }
+
+                if (nearestTarget is MyCubeBlock && Target is MyCubeBlock && nearestTarget.Parent == Target.Parent && !Target.Closed)
+                    nearestTarget = Target;
+            }
+
+
+            /*
             foreach (var target in m_targetList)
             {
                 var dist = Vector3D.DistanceSquared(target.PositionComp.GetPosition(), PositionComp.GetPosition());
@@ -1812,7 +1861,7 @@ namespace Sandbox.Game.Weapons
                     }
                 }
             }
-
+            */
             return nearestTarget;
         }
 

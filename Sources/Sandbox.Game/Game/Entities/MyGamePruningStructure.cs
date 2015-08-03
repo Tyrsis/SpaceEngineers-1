@@ -183,6 +183,13 @@ namespace Sandbox.Game.Entities
             VRageRender.MyRenderProxy.GetRenderProfiler().EndProfilingBlock();
         }
 
+        public static void GetAllTopMostEntitiesInSphere<T>(ref BoundingSphereD sphere, List<T> result)
+        {
+            VRageRender.MyRenderProxy.GetRenderProfiler().StartProfilingBlock("MyGamePruningStructure::GetAllTopMostEntitiesInSphere");
+            m_topMostEntitiesTree.OverlapAllBoundingSphere<T>(ref sphere, result);
+            VRageRender.MyRenderProxy.GetRenderProfiler().EndProfilingBlock();
+        }
+
         public static void GetAllVoxelMapsInBox(ref BoundingBoxD box, List<MyVoxelBase> result)
         {
             VRageRender.MyRenderProxy.GetRenderProfiler().StartProfilingBlock("MyGamePruningStructure::GetAllVoxelMapsInBox");
