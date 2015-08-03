@@ -1798,36 +1798,51 @@ namespace Sandbox.Game.Weapons
             MyEntity nearestTarget = null;
             double minDistanceSq = double.MaxValue;
 
-            foreach (var target in m_targetList)
+            foreach (var target in m_targetList.OrderBy(x => Vector3D.DistanceSquared(x.PositionComp.GetPosition(), PositionComp.GetPosition())))
             {
                 if (target.Physics == null)
                     continue;
 
+                if (target == Parent)
+                    continue;
+
                 var dist = Vector3D.DistanceSquared(target.PositionComp.GetPosition(), PositionComp.GetPosition());
-                if (IsTargetEnemy(target) && IsTargetInView(target) && IsTargetVisible(target) && target != this.GetTopMostParent())
+                if(Target != null && ((target == Target) || (Target.Parent != null && Target.Parent == target)))
                 {
                     if (dist < minDistanceSq)
                     {
-                        if (target is MyCubeGrid)
-                        {
-                            var blocks = ((MyCubeGrid)target).GetBlocks().Where(x => x.FatBlock != null).Select(y => y.FatBlock);
-                            if (blocks.Count() < 1)
-                                continue;
-
-                            var position = VRage.Library.Utils.MyRandom.Instance.Next(blocks.Count());
-                            nearestTarget = (MyEntity)blocks.ElementAt(position);
-                        }
-                        else
-                        {
-                            nearestTarget = target;
-                        }
-
+                        nearestTarget = Target;
                         minDistanceSq = dist;
                     }
                 }
+                else
+                {
+                    if (dist < minDistanceSq)
+                    {
+                        if (IsTargetEnemy(target) && IsTargetInView(target) && IsTargetVisible(target) && target != this.GetTopMostParent())
+                        {
+                            nearestTarget = target;
+                            minDistanceSq = dist;
+                        }
+                    }
+                }
 
-                if (nearestTarget is MyCubeBlock && Target is MyCubeBlock && nearestTarget.Parent == Target.Parent && !Target.Closed)
-                    nearestTarget = Target;
+                //if (nearestTarget is MyCubeBlock && Target is MyCubeBlock && nearestTarget.Parent == Target.Parent && !Target.Closed)
+                //    nearestTarget = Target;
+            }
+
+            if (nearestTarget is MyCubeGrid && (Target == null || Target != null && Target.Parent != nearestTarget))
+            {
+                //nearestTarget = nearestTarget;
+                //nearestTarget = Target;
+
+                var blocks = ((MyCubeGrid)nearestTarget).GetBlocks().Where(x => x.FatBlock != null).Select(y => y.FatBlock);
+                if (blocks.Count() > 0)
+                {
+                    var position = VRage.Library.Utils.MyRandom.Instance.Next(blocks.Count());
+                    nearestTarget = (MyEntity)blocks.ElementAt(position);
+                    //nearestTarget = target;
+                }
             }
 
 
